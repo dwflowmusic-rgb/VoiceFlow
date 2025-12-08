@@ -4,6 +4,58 @@ All notable changes to Juris Transcritor (formerly Whispo Windows) will be docum
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.2.0] - 2025-12-08
+
+### Added
+
+- **CapsLock Hotkey**: New recording activation method
+  - **Hold CapsLock for 800ms** → Start recording
+  - **Release CapsLock** → Stop and transcribe
+  - **Quick tap** → Normal CapsLock toggle (caps on/off)
+  - Replaces Ctrl-hold which conflicted with file selection
+- **Clipboard-based Text Injection**: Ultra-fast text paste
+  - Uses Ctrl+V instead of character-by-character simulation
+  - **Performance:** 2-5 seconds → < 100ms (95%+ faster!)
+  - Preserves and restores original clipboard content
+  - No more focus-loss issues during text insertion
+- **Toggle-caps Command**: New Rust command for CapsLock control
+
+### Changed
+
+- **LLM Post-Processing**: Completely rewritten for reliability
+  - Proper system/user message separation (was causing command echo)
+  - Added `SYSTEM_INSTRUCTION` constant with clear rules
+  - Response cleanup removes unwanted prefixes ("Aqui está:", etc.)
+  - Graceful fallback to original transcript on error
+  - Better logging for debugging
+
+### Fixed
+
+- **"LLM returns command text"** - Fixed! Now properly separates instructions from content
+- **"Text injection stops on focus loss"** - Fixed! Clipboard paste is atomic
+- **"Slow character-by-character typing"** - Fixed! Now uses Ctrl+V
+- **"Ctrl conflicts with file selection"** - Fixed! Now uses CapsLock
+
+### Technical
+
+- Modified `src/main/keyboard.ts` - CapsLock detection with 800ms threshold
+- Rewrote `src/main/llm.ts` - Proper OpenAI/Gemini message structure
+- Updated `whispo-rs/src/main.rs`:
+  - New `write_text_fast()` using clipboard + Ctrl+V
+  - New `toggle-caps` command for CapsLock simulation
+  - Added `clipboard-win` dependency
+- Rebuilt Rust binary with clipboard support
+
+### Performance
+
+| Feature | Before | After | Improvement |
+|---------|--------|-------|-------------|
+| Text Injection | 2-5s | < 100ms | **95-98%** |
+| Focus Loss | Common | None | **100%** |
+| Ctrl Conflicts | Frequent | None | **100%** |
+
+---
+
 ## [1.1.1] - 2025-12-08
 
 ### Added

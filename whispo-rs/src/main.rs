@@ -67,13 +67,59 @@ fn deal_event_to_json(event: Event) -> RdevEvent {
     jsonify_event
 }
 
-fn write_text(text: &str) {
+// OLD: Slow character-by-character method (kept as fallback)
+fn write_text_slow(text: &str) {
     use enigo::{Enigo, Keyboard, Settings};
-
     let mut enigo = Enigo::new(&Settings::default()).unwrap();
-
-    // write text
     enigo.text(text).unwrap();
+}
+
+// NEW: Fast clipboard + Ctrl+V method
+fn write_text_fast(text: &str) {
+    use clipboard_win::{formats, set_clipboard, get_clipboard_string};
+    use enigo::{Enigo, Key, Keyboard, Settings, Direction};
+    
+    // Save current clipboard content
+    let old_clipboard = get_clipboard_string().unwrap_or_default();
+    
+    // Set new text to clipboard
+    if let Err(e) = set_clipboard(formats::Unicode, text) {
+        eprintln!("Failed to set clipboard: {:?}", e);
+        // Fallback to slow method if clipboard fails
+        write_text_slow(text);
+        return;
+    }
+    
+    // Small delay to ensure clipboard is ready
+    std::thread::sleep(std::time::Duration::from_millis(30));
+    
+    // Simulate Ctrl+V (paste)
+    let mut enigo = Enigo::new(&Settings::default()).unwrap();
+    
+    // Press Ctrl
+    if let Err(e) = enigo.key(Key::Control, Direction::Press) {
+        eprintln!("Failed to press Ctrl: {:?}", e);
+        write_text_slow(text);
+        return;
+    }
+    
+    // Press V
+    if let Err(e) = enigo.key(Key::Unicode('v'), Direction::Click) {
+        eprintln!("Failed to press V: {:?}", e);
+    }
+    
+    // Release Ctrl
+    if let Err(e) = enigo.key(Key::Control, Direction::Release) {
+        eprintln!("Failed to release Ctrl: {:?}", e);
+    }
+    
+    // Wait for paste to complete
+    std::thread::sleep(std::time::Duration::from_millis(100));
+    
+    // Restore original clipboard content
+    if !old_clipboard.is_empty() {
+        let _ = set_clipboard(formats::Unicode, &old_clipboard);
+    }
 }
 
 fn main() {
@@ -92,8 +138,23 @@ fn main() {
         }
     }
 
+    // Fast write using clipboard + Ctrl+V
     if args.len() > 2 && args[1] == "write" {
         let text = args[2].clone();
-        write_text(text.as_str());
+        write_text_fast(text.as_str());
+    }
+    
+    // Fallback: slow write using character simulation (for compatibility)
+    if args.len() > 2 && args[1] == "write-slow" {
+        let text = args[2].clone();
+        write_text_slow(text.as_str());
+    }
+    
+    // Toggle CapsLock state (used to revert after recording)
+    if args.len() > 1 && args[1] == "toggle-caps" {
+        use enigo::{Enigo, Key, Keyboard, Settings, Direction};
+        let mut enigo = Enigo::new(&Settings::default()).unwrap();
+        // Press and release CapsLock to toggle its state
+        let _ = enigo.key(Key::CapsLock, Direction::Click);
     }
 }
