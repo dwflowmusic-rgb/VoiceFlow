@@ -4,6 +4,66 @@ All notable changes to Juris Transcritor (formerly Whispo Windows) will be docum
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.4.0] - 2025-12-14
+
+### Added
+
+- **Whispo Orb**: Nova interface visual circular durante gravação
+  - Design glassmorphism com efeitos blur e transparência
+  - Animação pulsante durante captura de áudio
+  - Indicadores visuais de estado (gravando, processando, pronto)
+  - Visual moderno e minimalista
+
+- **Auto-Enter**: Pressiona Enter automaticamente após inserir texto
+  - Configurável nas opções gerais
+  - Útil para formulários e campos de texto rápidos
+  - Toggle on/off nas configurações
+
+- **Splash Screen**: Tela de carregamento elegante
+  - Exibida durante inicialização (~2.5s)
+  - Feedback visual de progresso
+  - Design consistente com identidade visual
+
+- **Seleção de Modelo Gemini**: Escolha seu modelo preferido
+  - Flash Lite (rápido/barato)
+  - Flash (equilibrado/padrão)
+  - Pro 2.5 (avançado)
+  - Pro 3.0 Preview (mais avançado)
+
+- **Botão de Ajuda (?)**: Instruções inline para obter API Keys
+  - Guias passo-a-passo para OpenAI, Groq e Gemini
+  - Diálogos informativos com links diretos
+
+### Changed
+
+- **Script de Build para Windows**: Novo `build-rs.ps1` em PowerShell
+  - Substitui `build-rs.sh` (bash) que não funcionava no Windows
+  - Detecção automática de binário existente (skip rebuild)
+  - Tratamento de erros robusto
+
+- **Componente Control**: Adicionada prop `description`
+  - Suporta texto descritivo abaixo do label
+  - Usado no toggle Auto-Enter
+
+### Fixed
+
+- **Erros de TypeScript**: Corrigidos parâmetros não usados e props faltantes
+- **Build no Windows**: Desabilitada assinatura de código para builds locais
+- **Cache corrompido**: Limpeza automática do electron-builder cache
+
+### Technical
+
+- Novo arquivo: `src/main/splash.ts` - Gerencia splash screen
+- Novo arquivo: `resources/splash.html` - Template da splash
+- Novo arquivo: `scripts/build-rs.ps1` - Build script PowerShell
+- Atualizado: `src/main/index.ts` - Integração splash + inicialização
+- Atualizado: `src/renderer/src/pages/panel.tsx` - Visual Orb
+- Atualizado: `src/renderer/src/pages/settings-general.tsx` - Auto-Enter
+- Atualizado: `src/renderer/src/pages/settings-providers.tsx` - Model select + HelpButtons
+- Atualizado: `electron-builder.config.cjs` - signAndEditExecutable: false
+
+---
+
 ## [1.2.0] - 2025-12-08
 
 ### Added
