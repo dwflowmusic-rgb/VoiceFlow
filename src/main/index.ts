@@ -14,6 +14,7 @@ import { registerServeProtocol, registerServeSchema } from "./serve"
 import { createAppMenu } from "./menu"
 import { initTray } from "./tray"
 import { isAccessibilityGranted } from "./utils"
+import { PythonBridge } from "./python-bridge"
 
 registerServeSchema()
 
@@ -52,6 +53,9 @@ console.time("[STARTUP] Total app initialization")
 app.whenReady().then(async () => {
   // Set app user model id for windows
   electronApp.setAppUserModelId(process.env.APP_ID)
+
+  // Start Python Core (Onda 1)
+  PythonBridge.start()
 
   const accessibilityGranted = isAccessibilityGranted()
 

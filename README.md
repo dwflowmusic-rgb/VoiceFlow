@@ -1,4 +1,4 @@
-# Whispo - Windows Edition
+# SpeakEasy - Assistente de Transcrição IA
 
 [🇧🇷 Português](#português) | [🇺🇸 English](#english)
 
@@ -8,19 +8,22 @@
 
 ### 🎙️ Sobre
 
-**Whispo** é uma ferramenta de ditado por IA que permite transcrever sua voz em texto automaticamente em qualquer aplicativo. Esta é uma versão otimizada para Windows com launcher silencioso e configuração de inicialização automática.
+**SpeakEasy** é um assistente de transcrição por IA que permite ditar sua voz em texto automaticamente em qualquer aplicativo. Combina processamento local ultra-leve (85MB RAM) com APIs cloud de última geração para oferecer transcrições precisas, rápidas e personalizáveis através de personas e templates.
 
-**Baseado em:** [egoist/whispo](https://github.com/egoist/whispo) v0.1.7
+**Baseado em:** [egoist/whispo](https://github.com/egoist/whispo) v0.1.7 (com extensas melhorias e customizações)
 
 ### ✨ Funcionalidades
 
 - ✅ **Ditado por Voz**: Segure `Ctrl` para gravar, solte para transcrever
-- ✅ **Inserção Automática**: Texto aparece automaticamente no app ativo
+- ✅ **Inserção Automática**: Texto aparece automaticamente no app ativo com Auto-Enter opcional
 - ✅ **Multi-Provider**: OpenAI, Groq (grátis), ou Gemini
-- ✅ **Pós-Processamento**: LLMs podem melhorar gramática/pontuação
+- ✅ **Orb UI**: Interface circular flutuante com animações e feedback visual durante gravação
+- ✅ **Personas & Templates**: 4 personas pré-configuradas (Advogado, Dev, Casual, TDAH) para adaptar o estilo de transcrição
+- ✅ **Editor de Prompt**: Interface visual para customizar system prompts com templates predefinidos
+- ✅ **Pós-Processamento LLM**: Gemini/GPT corrige gramática, pontuação e formata conforme persona escolhida
 - ✅ **Launcher Silencioso**: Executa sem janela de terminal
 - ✅ **Auto-Start**: Inicia com o Windows automaticamente
-- ✅ **Offline-First**: Dados armazenados localmente
+- ✅ **Histórico Local**: Dados armazenados localmente com busca integrada
 
 ### 🚀 Início Rápido
 
@@ -29,20 +32,20 @@
 1. **Clone este repositório:**
 
    ```bash
-   git clone https://github.com/giand/whispo-windows.git
-   cd whispo-windows
+   git clone https://github.com/dwflowmusic-rgb/speakeasy.git
+   cd speakeasy/speakeasy-app
    ```
 
 2. **Configure API Key (Groq - Grátis):**
    - Crie conta em: <https://console.groq.com>
    - Copie sua API key
-   - Execute: `whispo-silencioso.vbs`
+   - Execute: `SpeakEasy` (através do Desktop)
    - Settings → Providers → Groq → Cole a API key
    - Settings → General → Speech-to-Text Provider → Groq
 
 3. **Teste:**
    - Segure `Ctrl` + fale + solte `Ctrl`
-   - O texto aparecerá automaticamente!
+   - O texto aparecerá automaticamente no aplicativo ativo!
 
 #### Opção 2: Compilar do Zero
 
@@ -119,13 +122,14 @@ Veja instruções completas em [`WINDOWS_SETUP.md`](WINDOWS_SETUP.md)
 ### 📝 Arquivos Importantes
 
 ```
-whispo-windows/
-├── whispo.bat                 # Launcher com PATH config
-├── whispo-silencioso.vbs      # Launcher silencioso
-├── resources/bin/
-│   └── whispo-rs.exe          # Motor de áudio Rust (compilado)
-├── WINDOWS_SETUP.md           # Guia completo de instalação
-└── CHANGELOG.md               # Histórico de alterações
+speakeasy/
+├── speakeasy-app/             # Frontend Electron + UI
+│   ├── speakeasy-rs/          # Motor de áudio Rust
+│   ├── out/                   # Código compilado
+│   └── resources/bin/         # Binários (speakeasy-rs.exe)
+├── speakeasy-core/            # Backend Python (opcional)
+├── docs/                      # Documentação completa
+└── CONVENTIONS.md             # Convenções do projeto
 ```
 
 ### 🤝 Contribuindo
@@ -167,8 +171,8 @@ Contribuições são bem-vindas! Especialmente:
 1. **Clone this repository:**
 
    ```bash
-   git clone https://github.com/giand/whispo-windows.git
-   cd whispo-windows
+   git clone https://github.com/dwflowmusic-rgb/speakeasy.git
+   cd speakeasy/speakeasy-app
    ```
 
 2. **Configure API Key (Groq - Free):**
@@ -257,13 +261,14 @@ See complete instructions in [`WINDOWS_SETUP.md`](WINDOWS_SETUP.md)
 ### 📝 Important Files
 
 ```
-whispo-windows/
-├── whispo.bat                 # Launcher with PATH config
-├── whispo-silencioso.vbs      # Silent launcher
-├── resources/bin/
-│   └── whispo-rs.exe          # Rust audio engine (compiled)
-├── WINDOWS_SETUP.md           # Complete installation guide
-└── CHANGELOG.md               # Change history
+speakeasy/
+├── speakeasy-app/             # Electron frontend + UI
+│   ├── speakeasy-rs/          # Rust audio engine
+│   ├── out/                   # Compiled code
+│   └── resources/bin/         # Binaries (speakeasy-rs.exe)
+├── speakeasy-core/            # Python backend (optional)
+├── docs/                      # Complete documentation
+└── CONVENTIONS.md             # Project conventions
 ```
 
 ### 🤝 Contributing
@@ -280,4 +285,4 @@ Contributions are welcome! Especially:
 
 ---
 
-**Made with ❤️ for Windows users** | Based on [egoist/whispo](https://github.com/egoist/whispo)
+**SpeakEasy** - Built with ❤️ for productive dictation | Based on [egoist/whispo](https://github.com/egoist/whispo) with extensive enhancements

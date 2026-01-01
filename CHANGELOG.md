@@ -2,6 +2,52 @@
 
 Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
+## [2.0.0] - 2025-12-31
+
+### Changed - Renomeação e Rebranding
+
+- **Identidade Oficial:** Renomeação completa de "Whispo/Juris Transcritor" para **SpeakEasy**
+  - Atualização `package.json`: name → "speakeasy", version → "2.0.0"
+  - Configuração `electron-builder`: appId → "com.speakeasy.desktop", productName → "SpeakEasy"
+  - Repositório oficial: <https://github.com/dwflowmusic-rgb/speakeasy.git>
+- **Documentação:** README, CHANGELOG e ROADMAP atualizados para refletir nova identidade
+
+### Improved - UI/UX
+
+- **Editor de Prompt:** Melhorias significativas na experiência de edição
+  - Botão "Salvar" explícito com feedback visual ("Salvando..." → "Salvar Alterações")
+  - Seletor de **Templates** integrado (Advogado, Dev, Casual, TDAH)
+  - Aplicação de persona predefinida com um único clique
+  - Placeholder visual `{transcript}` destacado para orientação do usuário
+- **Settings:** Interface de configurações mais intuitiva e organizada
+
+### Technical - Infraestrutura
+
+- **Build Config:** Atualização electron-builder com novos metadados
+  - Desabilitado `signAndEditExecutable` para builds locais sem certificado
+  - Configuração publish aponta para repositório oficial
+- **Rust Module:** Reorganização de arquivos `speakeasy-rs/`
+  - Limpeza de arquivos obsoletos (main.rs antigo removido)
+  - Estrutura simplificada do módulo Rust
+
+### Documentation
+
+- **README:** Atualizado de "Whispo - Windows Edition" para "SpeakEasy - Assistente de Transcrição IA"
+- **Funcionalidades:** Documentação expandida incluindo Orb UI, Personas, Templates
+- **Estrutura:** Atualização da árvore de diretórios e arquivos importantes
+
+### Notes
+
+Esta é uma release de consolidação que oficializa a evolução do projeto desde o fork original egoist/whispo v0.1.7. O SpeakEasy mantém compatibilidade com dados e configurações das versões 1.x.
+
+---
+
+## [1.5.1] - 2025-12-16
+
+### Melhorado
+
+- **Editor de Prompt:** Adicionado botão de "Salvar" explícito e modo de edição isolado para evitar perda de alterações e garantir persistência do prompt customizado.
+
 ## [1.5.0] - 2025-12-16
 
 ### Adicionado

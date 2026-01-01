@@ -2,8 +2,8 @@
 
 /** @type {import('electron-builder').Configuration} */
 module.exports = {
-  appId: "com.juristranscritor.app",
-  productName: "Juris Transcritor",
+  appId: "com.speakeasy.desktop",
+  productName: "SpeakEasy",
   directories: {
     buildResources: "build",
   },
@@ -18,22 +18,32 @@ module.exports = {
     "!*.{js,cjs,mjs,ts}",
     "!components.json",
     "!.prettierrc",
-    '!whispo-rs/*'
+    '!speakeasy-rs/*'
   ],
   asarUnpack: ["resources/**", "node_modules/**"],
+  extraResources: [
+    {
+      from: "speakeasy-rs/target/release/speakeasy-rs.exe",
+      to: "bin/speakeasy-rs.exe"
+    },
+    {
+      from: "../speakeasy-core/dist/speakeasy-core",
+      to: "bin/speakeasy-core"
+    }
+  ],
   win: {
-    executableName: "whispo",
+    executableName: "speakeasy",
     // Desabilita assinatura de código para builds locais
     signAndEditExecutable: false,
   },
   nsis: {
-    artifactName: "${name}-${version}-setup.${ext}",
+    artifactName: "SpeakEasy-${version}-${arch}.${ext}",
     shortcutName: "${productName}",
     uninstallDisplayName: "${productName}",
     createDesktopShortcut: "always",
   },
   mac: {
-    binaries: [`resources/bin/whispo-rs${process.platform === 'darwin' ? '' : '.exe'}`],
+    binaries: [`resources/bin/speakeasy-rs${process.platform === 'darwin' ? '' : '.exe'}`],
     artifactName: "${productName}-${version}-${arch}.${ext}",
     entitlementsInherit: "build/entitlements.mac.plist",
     extendInfo: [
@@ -75,7 +85,7 @@ module.exports = {
   publish: {
     provider: "github",
     owner: "egoist",
-    repo: "whispo",
+    repo: "speakeasy",
   },
   removePackageScripts: true,
 }

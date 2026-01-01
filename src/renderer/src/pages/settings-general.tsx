@@ -28,6 +28,7 @@ import {
   DialogTrigger,
 } from "@renderer/components/ui/dialog"
 import { Button } from "@renderer/components/ui/button"
+import { useEffect, useState } from "react"
 import {
   useConfigQuery,
   useSaveConfigMutation,
@@ -36,6 +37,8 @@ import { Config } from "@shared/types"
 
 export function Component() {
   const configQuery = useConfigQuery()
+  const [isEditingPrompt, setIsEditingPrompt] = useState(false)
+  const [promptDraft, setPromptDraft] = useState("")
 
   const saveConfigMutation = useSaveConfigMutation()
 
@@ -218,35 +221,44 @@ export function Component() {
                     {configQuery.data.transcriptPostProcessingPrompt}
                   </div>
                 )}
-                <Dialog>
-                  <DialogTrigger className="" asChild>
+                <Dialog open={isEditingPrompt} onOpenChange={setIsEditingPrompt}>
+                  <DialogTrigger asChild>
                     <Button
                       size="sm"
                       variant="outline"
                       className="h-6 gap-1 px-2"
+                      onClick={() => {
+                        setPromptDraft(configQuery.data?.transcriptPostProcessingPrompt || "")
+                      }}
                     >
                       <span className="i-mingcute-edit-2-line"></span>
                       Edit
                     </Button>
                   </DialogTrigger>
-                  <DialogContent>
+                  <DialogContent className="max-w-[800px]">
                     <DialogHeader>
-                      <DialogTitle>Edit Prompt</DialogTitle>
+                      <DialogTitle>Editor de Prompt do Sistema</DialogTitle>
                     </DialogHeader>
                     <Textarea
-                      rows={10}
-                      defaultValue={
-                        configQuery.data.transcriptPostProcessingPrompt
-                      }
-                      onChange={(e) => {
-                        saveConfig({
-                          transcriptPostProcessingPrompt: e.currentTarget.value,
-                        })
-                      }}
+                      rows={15}
+                      className="font-mono text-sm leading-relaxed"
+                      value={promptDraft}
+                      onChange={(e) => setPromptDraft(e.currentTarget.value)}
                     ></Textarea>
                     <div className="text-sm text-muted-foreground">
-                      Use <span className="select-text">{"{transcript}"}</span>{" "}
-                      placeholder to insert the original transcript
+                      Use o placeholder <span className="select-text font-mono bg-muted px-1 rounded">{"{transcript}"}</span> para indicar onde o texto ditado deve ser inserido.
+                    </div>
+                    <div className="flex justify-end gap-2 mt-4">
+                      <Button variant="ghost" onClick={() => setIsEditingPrompt(false)}>Cancelar</Button>
+                      <Button
+                        disabled={saveConfigMutation.isPending}
+                        onClick={() => {
+                          saveConfig({ transcriptPostProcessingPrompt: promptDraft })
+                          setIsEditingPrompt(false)
+                        }}
+                      >
+                        {saveConfigMutation.isPending ? "Salvando..." : "Salvar Alterações"}
+                      </Button>
                     </div>
                   </DialogContent>
                 </Dialog>
