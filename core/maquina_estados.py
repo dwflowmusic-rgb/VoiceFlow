@@ -87,6 +87,7 @@ class MaquinaEstados:
         
         # Flag de cancelamento (Fase 4)
         self._cancelado = False
+        self._id_operacao = 0  # Identificador de geração para thread safety
         
         logger.info("Máquina de estados inicializada - Estado: IDLE")
     
@@ -162,7 +163,10 @@ class MaquinaEstados:
             logger.warning(f"Tentativa de iniciar gravação em estado inválido: {self._estado.name}")
             return False
         
-        # Limpa dados anteriores
+        # Limpa dados anteriores e incrementa ID da operação
+        self._id_operacao += 1
+        self._cancelado = False
+
         self._caminho_audio = None
         self._duracao_audio = 0.0
         self._texto_bruto = None
@@ -185,10 +189,8 @@ class MaquinaEstados:
         """
         Cancela a operação atual.
         
-        Se estiver gravando: para gravação e descarta áudio.
-        Se estiver processando: seta flag para abortar ANTES de chamar API.
-        
-        Isso evita gasto de tokens ao cancelar rapidamente.
+        Se estiver gravando: para gravação, descarta áudio e limpa arquivo.
+        Se estiver processando: seta flag e DEIXA A THREAD limpar o arquivo.
         """
         if self._estado == Estado.IDLE:
             logger.debug("Cancelamento ignorado - já em IDLE")
@@ -196,21 +198,30 @@ class MaquinaEstados:
         
         logger.info(f"🚫 Cancelamento solicitado em estado: {self._estado.name}")
         
-        # Seta flag para abortar processamento
+        # Seta flag para abortar processamento (thread verifica isso)
         self._cancelado = True
         
-        # Se estiver gravando, para a gravação
+        # Se estiver gravando, para a gravação e limpa IMEDIATAMENTE
         if self._estado == Estado.RECORDING:
-            self._capturador.parar_gravacao()  # Descarta áudio
+            caminho_temp, _ = self._capturador.parar_gravacao()
+            if caminho_temp:
+                limpar_arquivo_temporario(caminho_temp)
             
-        # Limpa arquivo temporário se existir
-        if self._caminho_audio:
-            limpar_arquivo_temporario(self._caminho_audio)
-            self._caminho_audio = None
+            # Limpa referência se existir
+            if self._caminho_audio:
+                limpar_arquivo_temporario(self._caminho_audio)
+                self._caminho_audio = None
+
+            self._transitar(Estado.IDLE)
+            logger.info("✅ Gravação cancelada e descartada")
         
-        # Transita para IDLE
-        self._transitar(Estado.IDLE)
-        logger.info("✅ Operação cancelada - nenhum token consumido")
+        elif self._estado in (Estado.TRANSCRIBING, Estado.POLISHING):
+            # Se estiver processando, NÃO limpamos o arquivo aqui para não quebrar a thread.
+            # A thread vai ler a flag self._cancelado, abortar e limpar o arquivo.
+
+            # Transitamos para IDLE para feedback visual imediato na UI
+            self._transitar(Estado.IDLE)
+            logger.info("✅ Processamento cancelado (aguardando thread finalizar limpeza)")
     
     def parar_gravacao(self) -> None:
         """
@@ -232,49 +243,83 @@ class MaquinaEstados:
         self._caminho_audio = caminho
         self._duracao_audio = duracao
         
-        # Inicia processamento em thread separada
+        # Inicia processamento em thread separada, passando o caminho explicitamente
         self._transitar(Estado.TRANSCRIBING)
-        thread = threading.Thread(target=self._processar_audio, daemon=True)
+
+        # Captura ID atual para passar à thread
+        op_id = self._id_operacao
+        thread = threading.Thread(target=self._processar_audio, args=(caminho, op_id), daemon=True)
         thread.start()
     
-    def _processar_audio(self) -> None:
+    def _processar_audio(self, caminho_audio: str, id_operacao: int) -> None:
         """
         Processa áudio: transcrição + polimento.
         Executado em thread separada.
+
+        Args:
+            caminho_audio: Caminho do arquivo WAV a processar
+            id_operacao: ID da operação para verificar obsolescência (zombie check)
         """
+        # Verifica se thread é obsoleta (usuário iniciou nova operação)
+        if self._id_operacao != id_operacao:
+            logger.info(f"Thread obsoleta (ID {id_operacao} != {self._id_operacao}) - abortando silenciosamente")
+            limpar_arquivo_temporario(caminho_audio)
+            return
+
         try:
             # Verifica cancelamento ANTES de chamar API (economia de tokens)
             if self._cancelado:
-                logger.info("🚫 Processamento abortado por cancelamento")
+                logger.info("🚫 Processamento abortado por cancelamento (inicio)")
                 self._cancelado = False  # Reset flag
-                self._finalizar()
+                self._finalizar(caminho_audio, id_operacao)
                 return
             
             # TRANSCRIBING: Envia para Groq
-            texto, erro = self._cliente_api.transcrever(self._caminho_audio)
+            texto, erro = self._cliente_api.transcrever(caminho_audio)
             
             # Verifica cancelamento após transcrição (antes de polimento)
-            if self._cancelado:
-                logger.info("🚫 Transcrição concluída mas polimento abortado por cancelamento")
-                self._cancelado = False
-                self._finalizar()
+            if self._cancelado or self._id_operacao != id_operacao:
+                logger.info("🚫 Transcrição concluída mas abortado por cancelamento ou obsolescência")
+                if self._cancelado: self._cancelado = False
+                self._finalizar(caminho_audio, id_operacao)
                 return
             
             if texto is None:
+                # Se foi cancelado durante a transcrição
+                if self._cancelado or self._id_operacao != id_operacao:
+                    logger.info("🚫 Erro na transcrição ignorado (cancelado/obsoleto)")
+                    if self._cancelado: self._cancelado = False
+                    self._finalizar(caminho_audio, id_operacao)
+                    return
+
                 logger.error(f"Transcrição falhou: {erro}")
-                self._salvar_audio_falha(erro or "Falha na transcrição")
-                self._transitar(Estado.ERROR)
-                notificar_erro(erro or "Falha na transcrição")
-                self._finalizar()
+                # Só salva falha se NÃO foi cancelado
+                self._salvar_audio_falha(erro or "Falha na transcrição", caminho_audio)
+
+                # Só muda estado se ID bater
+                if self._id_operacao == id_operacao:
+                    self._transitar(Estado.ERROR)
+                    notificar_erro(erro or "Falha na transcrição")
+
+                self._finalizar(caminho_audio, id_operacao)
                 return
             
             self._texto_bruto = texto
             
             # POLISHING: Envia para Gemini
-            self._transitar(Estado.POLISHING)
+            if self._id_operacao == id_operacao:
+                self._transitar(Estado.POLISHING)
+
             texto_polido, foi_polido = self._cliente_api.polir(texto)
             self._texto_polido = texto_polido
             
+            # Verifica cancelamento após polimento
+            if self._cancelado or self._id_operacao != id_operacao:
+                logger.info("🚫 Polimento concluído mas abortado antes de salvar/colar")
+                if self._cancelado: self._cancelado = False
+                self._finalizar(caminho_audio, id_operacao)
+                return
+
             if not foi_polido:
                 logger.warning("Usando texto bruto (polimento falhou)")
             
@@ -322,9 +367,10 @@ class MaquinaEstados:
                     # Ainda assim, tentar entregar ao clipboard como última chance
             
             # COMPLETE: Copia para clipboard via callback bloqueante
-            self._transitar(Estado.COMPLETE)
+            if self._id_operacao == id_operacao:
+                self._transitar(Estado.COMPLETE)
             
-            if self._callback_clipboard:
+            if self._callback_clipboard and self._id_operacao == id_operacao:
                 # Callback é bloqueante - aguarda até clipboard ser atualizado
                 logger.info(f"Copiando {len(self._texto_polido)} caracteres para clipboard")
                 sucesso = self._callback_clipboard(self._texto_polido)
@@ -364,16 +410,20 @@ class MaquinaEstados:
             
         except Exception as e:
             logger.error(f"Erro no processamento: {e}", exc_info=True)
-            self._salvar_audio_falha(f"Erro de processamento: {str(e)}")
-            self._transitar(Estado.ERROR)
-            notificar_erro("Erro inesperado no processamento")
+            if not self._cancelado and self._id_operacao == id_operacao:
+                self._salvar_audio_falha(f"Erro de processamento: {str(e)}", caminho_audio)
+                self._transitar(Estado.ERROR)
+                notificar_erro("Erro inesperado no processamento")
+            else:
+                logger.info("Erro suprimido (cancelado ou obsoleto)")
         
         finally:
-            self._finalizar()
+            self._finalizar(caminho_audio, id_operacao)
 
-    def _salvar_audio_falha(self, erro_msg: str) -> None:
+    def _salvar_audio_falha(self, erro_msg: str, caminho_origem: Optional[str] = None) -> None:
         """Salva áudio falho para retry posterior."""
-        if not self._caminho_audio or not os.path.exists(self._caminho_audio):
+        caminho = caminho_origem or self._caminho_audio
+        if not caminho or not os.path.exists(caminho):
             return
 
         try:
@@ -386,7 +436,7 @@ class MaquinaEstados:
             caminho_json = os.path.join(DIR_FALHAS, f"{nome_base}.json")
 
             # Copia arquivo (preserva original para _finalizar limpar se for temp)
-            shutil.copy2(self._caminho_audio, caminho_destino)
+            shutil.copy2(caminho, caminho_destino)
 
             # Salva metadados
             dados = {
@@ -423,21 +473,43 @@ class MaquinaEstados:
             
         logger.info(f"♻️ Iniciando reprocessamento de: {caminho_wav}")
         
+        # Incrementa ID e reseta cancelamento
+        self._id_operacao += 1
+        self._cancelado = False
+
         # Define estado
         self._caminho_audio = caminho_wav
         self._duracao_audio = 0.0 
         
         # Inicia processamento
         self._transitar(Estado.TRANSCRIBING)
-        thread = threading.Thread(target=self._processar_audio, daemon=True)
+
+        op_id = self._id_operacao
+        thread = threading.Thread(target=self._processar_audio, args=(caminho_wav, op_id), daemon=True)
         thread.start()
     
-    def _finalizar(self) -> None:
-        """Limpa recursos e retorna para IDLE."""
-        # Remove arquivo temporário
-        if self._caminho_audio:
-            limpar_arquivo_temporario(self._caminho_audio)
-            self._caminho_audio = None
-        
-        # Retorna para IDLE
-        self._transitar(Estado.IDLE)
+    def _finalizar(self, caminho_audio: Optional[str], id_operacao: int) -> None:
+        """
+        Limpa recursos e retorna para IDLE.
+        Verifica id_operacao para evitar race condition com novas operações.
+        """
+        # Remove arquivo temporário se passado como argumento (usado pela thread)
+        if caminho_audio:
+             limpar_arquivo_temporario(caminho_audio)
+
+        # Só atualiza estado global se ID bater
+        if self._id_operacao == id_operacao:
+            # Se self._caminho_audio ainda apontar para o mesmo arquivo, limpa a referência
+            if self._caminho_audio and caminho_audio and self._caminho_audio == caminho_audio:
+                self._caminho_audio = None
+
+            # Limpa arquivo temporário se sobrar em self._caminho_audio (fallback)
+            if self._caminho_audio:
+                limpar_arquivo_temporario(self._caminho_audio)
+                self._caminho_audio = None
+
+            # Retorna para IDLE (se já não estiver em IDLE devido a cancelamento)
+            if self._estado != Estado.IDLE:
+                self._transitar(Estado.IDLE)
+        else:
+            logger.info(f"Finalização ignorada para ID {id_operacao} (Atual: {self._id_operacao})")

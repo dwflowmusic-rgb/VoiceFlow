@@ -200,6 +200,8 @@ class VoiceFlowApp:
         self._bandeja.registrar_callback_sair(self._encerrar)
         self._bandeja.registrar_callback_historico(self._abrir_historico)
         self._bandeja.registrar_callback_retry(self._abrir_janela_retry)
+        self._bandeja.registrar_callback_configuracoes(self._abrir_configuracoes)
+        self._bandeja.registrar_callback_logs(self._abrir_logs)
         self._bandeja.registrar_callback_autostart(self._toggle_autostart)
         self._bandeja.registrar_callback_auto_enter(self._toggle_auto_enter)
         self._maquina.registrar_callback_estado(self._on_mudanca_estado)
@@ -360,6 +362,32 @@ class VoiceFlowApp:
         self._janela_retry.show()
         self._janela_retry.raise_()
         self._janela_retry.activateWindow()
+
+    def _abrir_arquivo_externo(self, caminho: str) -> None:
+        """Abre arquivo no editor padrão do sistema."""
+        self._logger.info(f"Abrindo arquivo externo: {caminho}")
+        try:
+            if sys.platform == 'win32':
+                os.startfile(caminho)
+            else:
+                import subprocess
+                opener = 'xdg-open' if sys.platform != 'darwin' else 'open'
+                subprocess.call([opener, caminho])
+        except Exception as e:
+            self._logger.error(f"Erro ao abrir arquivo {caminho}: {e}")
+            self._exibir_notificacao_qt("Erro", f"Não foi possível abrir: {caminho}")
+
+    def _abrir_configuracoes(self) -> None:
+        """Abre arquivo config.json."""
+        self._abrir_arquivo_externo(ARQUIVO_CONFIG)
+
+    def _abrir_logs(self) -> None:
+        """Abre arquivo de logs."""
+        caminho_log = os.path.join(os.path.dirname(ARQUIVO_CONFIG), 'data', 'logs', 'voiceflow.log')
+        if not os.path.exists(caminho_log):
+             # Tenta abrir a pasta se o arquivo não existir
+             caminho_log = os.path.dirname(caminho_log)
+        self._abrir_arquivo_externo(caminho_log)
 
     def _toggle_autostart(self, ativar: bool) -> None:
         """Alterna inicialização automática."""

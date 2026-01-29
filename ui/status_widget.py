@@ -184,9 +184,9 @@ class StatusWidget(QWidget):
             
         elif status == StatusType.CANCELLED:
             self._timer_gravacao.stop()
-            self._label_tempo.setText("--:--")
+            self._label_tempo.setText("CANC")
             self.show()
-            self._timer_auto_hide.start(1000)
+            self._timer_auto_hide.start(2000)
             
         elif status == StatusType.ERROR:
             self._timer_gravacao.stop()

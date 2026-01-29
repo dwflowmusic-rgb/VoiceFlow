@@ -50,8 +50,8 @@ class IconeBandeja:
         # Callbacks para ações do menu
         self._callback_historico: Optional[Callable] = None
         self._callback_configuracoes: Optional[Callable] = None
+        self._callback_logs: Optional[Callable] = None
         self._callback_autostart: Optional[Callable[[bool], None]] = None
-        self._callback_auto_enter: Optional[Callable[[bool], None]] = None
         self._callback_auto_enter: Optional[Callable[[bool], None]] = None
         self._callback_retry: Optional[Callable] = None
         self._callback_sair: Optional[Callable] = None
@@ -94,12 +94,17 @@ class IconeBandeja:
         self._acao_retry.triggered.connect(self._on_retry)
         self._menu.addAction(self._acao_retry)
         
-        # Ação: Configurações (Fase 3 - desabilitado por enquanto)
+        # Ação: Configurações
         self._acao_configuracoes = QAction("⚙️ Configurações", self._menu)
-        self._acao_configuracoes.setEnabled(False)  # Habilitado na Fase 3
+        # self._acao_configuracoes.setEnabled(False)  # Habilitado agora
         self._acao_configuracoes.triggered.connect(self._on_configuracoes)
         self._menu.addAction(self._acao_configuracoes)
         
+        # Ação: Logs
+        self._acao_logs = QAction("📂 Abrir Logs", self._menu)
+        self._acao_logs.triggered.connect(self._on_logs)
+        self._menu.addAction(self._acao_logs)
+
         # Ação: Iniciar com Windows (Checkable)
         self._acao_autostart = QAction("🚀 Iniciar com Windows", self._menu)
         self._acao_autostart.setCheckable(True)
@@ -134,6 +139,11 @@ class IconeBandeja:
         if self._callback_configuracoes:
             self._callback_configuracoes()
     
+    def _on_logs(self) -> None:
+        """Handler para ação Logs."""
+        if self._callback_logs:
+            self._callback_logs()
+
     def _on_autostart(self, checked: bool) -> None:
         """Handler para alteração do autostart."""
         if self._callback_autostart:
@@ -165,10 +175,11 @@ class IconeBandeja:
     def registrar_callback_configuracoes(self, callback: Callable) -> None:
         """Registra callback para quando usuário clicar em Configurações."""
         self._callback_configuracoes = callback
-    def registrar_callback_configuracoes(self, callback: Callable) -> None:
-        """Registra callback para quando usuário clicar em Configurações."""
-        self._callback_configuracoes = callback
         self._acao_configuracoes.setEnabled(True)
+
+    def registrar_callback_logs(self, callback: Callable) -> None:
+        """Registra callback para quando usuário clicar em Logs."""
+        self._callback_logs = callback
 
     def registrar_callback_retry(self, callback: Callable) -> None:
         """Registra callback para quando usuário clicar em Áudios Falhos."""
