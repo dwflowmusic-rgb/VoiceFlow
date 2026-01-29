@@ -1,0 +1,36 @@
+# Python: Bytecode e caches
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Ambientes Virtuais
+venv/
+.venv/
+env/
+
+# Configurações Locais e Sensíveis
+# CRÍTICO: Não versionar chaves de API e configurações de hardware locais
+config.json
+.env
+
+# Dados e Persistência
+# O histórico de transcrições é pessoal do usuário
+data/transcriptions.db
+data/transcriptions.db-journal
+historico.db
+
+# Arquivos Temporários de Áudio
+# O áudio deve ser deletado após o processamento, mas garantimos aqui que não subam
+*.wav
+temp_audio_*.wav
+
+# Logs do Sistema
+data/logs/*.log
+*.log
+
+# IDEs e Sistema Operacional
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini

@@ -1,0 +1,17 @@
+{
+  "capture_types": [
+    "feat",
+    "docs",
+    "refactor",
+    "perf"
+  ],
+  "min_files_for_refactor": 3,
+  "min_lines_for_refactor": 100,
+  "capture_all_architecture_docs": true,
+  "ignore_patterns": [
+    "*.test.py",
+    "*.spec.js",
+    "*.test.ts"
+  ],
+  "enabled": true
+}

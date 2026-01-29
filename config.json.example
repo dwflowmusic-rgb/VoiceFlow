@@ -1,0 +1,14 @@
+{
+    "transcription": {
+        "api_key": "SUA_CHAVE_GROQ_AQUI",
+        "model": "whisper-large-v3-turbo"
+    },
+    "polishing": {
+        "api_key": "SUA_CHAVE_GEMINI_AQUI",
+        "model": "gemini-1.5-flash"
+    },
+    "hotkey": {
+        "threshold_ms": 500,
+        "detector": "hook"
+    }
+}
